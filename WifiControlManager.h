@@ -13,6 +13,7 @@ private:
 public:
   WifiControlManager();  // Constructor
   bool connect();
+  bool connected();
   void reconnect();
   void handleClient();
   void handleCommand();
