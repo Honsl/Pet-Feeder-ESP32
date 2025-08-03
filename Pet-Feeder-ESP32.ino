@@ -7,21 +7,22 @@ WifiControlManager wifiManager;
 BluetoothManager bleManager;
 void setup() {
   Serial.begin(115200);
+  //Delay to allow setup of serial
   delay(3000);
   Serial.print("Start: ");
-  
+
   WifiMemoryManager wifiMemory;
   WifiCredentials loadedCreds = wifiMemory.load();
 
-  // if it cannot connect or no credentials, turn on the Bluetooth
- // if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
-    
+  // if cannot connect to wifi or no credentials, turn on the Bluetooth
+  if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
     bleManager.start();
-    
- // }
+  }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
- // wifiManager.handleClient();
+  if (wifiManager.connected()) {
+    wifiManager.handleClient();
+  }
 }
