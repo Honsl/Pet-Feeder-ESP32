@@ -16,7 +16,9 @@ public:
   bool connected();
   void reconnect();
   void handleClient();
-  void handleCommand();
+  void handleFeedCommand();
+  void handleStatusCommand();
+  void handleScheduleCommand();
   String getIpAddress() const;
 };
 
