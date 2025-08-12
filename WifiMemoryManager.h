@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <WifiCredentials.h>
+#include <FeederInfo.h>
 
 class WifiMemoryManager {
 private:
@@ -14,10 +15,13 @@ private:
 
 public:
 
-  bool save(const WifiCredentials& creds);
-  WifiCredentials load();
+  bool saveWifiCreds(const WifiCredentials& creds);
+  WifiCredentials loadWifiCreds();
   bool hasCredentials();
-  void clear();
+  bool saveScheduleInfo(const std::vector<Schedule> &list);
+  std::vector<Schedule> loadScheduleInfo();
+  void clearScheduleInfo();
+  void clearWifiInfo();
 };
 
 #endif
