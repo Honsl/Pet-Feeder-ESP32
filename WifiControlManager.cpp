@@ -31,7 +31,7 @@ bool WifiControlManager::connect() {
   //Make sure that there is ssid and password saved before trying to connect
   if (wifiMemory.hasCredentials()) {
     //Get the ssid and password credentials
-    WifiCredentials creds = wifiMemory.load();
+    WifiCredentials creds = wifiMemory.loadWifiCreds();
     String ssid = creds.ssid;
     String password = creds.password;
     // Connect to WiFi
@@ -53,8 +53,14 @@ bool WifiControlManager::connect() {
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
 
-    server.on("/command", HTTP_GET, [this]() {
-      this->handleCommand();
+    server.on("/feed", HTTP_GET, [this]() {
+      this->handleFeedCommand();
+    });
+    server.on("/setSchedule", HTTP_GET, [this]() {
+      this->handleScheduleCommand();
+    });
+    server.on("/status", HTTP_GET, [this]() {
+      this->handleStatusCommand();
     });
     server.begin();  // Start the server
     Serial.println("\nServer Started");
@@ -68,36 +74,41 @@ void WifiControlManager::handleClient() {
   server.handleClient();
 }
 //http://<ESP32_IP>/command?cmd=SET_MODE&value=3
-void WifiControlManager::handleCommand() {
-    // Print all arguments
-  int argsCount = server.args();
-  for (int i = 0; i < argsCount; i++) {
-    Serial.print("Arg ");
-    Serial.print(i);
-    Serial.print(" - Name: ");
-    Serial.print(server.argName(i));
-    Serial.print(", Value: ");
-    Serial.println(server.arg(i));
-  }
-  if (server.hasArg("cmd")) {
-    String command = server.arg("cmd");
-    if (command == "feed") {
-      if (server.hasArg("value")) {
-        String value = server.arg("value");
-        Serial.print("Received command:FEED ");
-        Serial.println(value);
+void WifiControlManager::handleFeedCommand() {
 
-        String response = "{\"foodLevel1\":\"OK\",\"foodLevel2\":\"test\"}";
+  if (server.hasArg("portion")) {
+    String portions = server.arg("portion");
 
-        server.send(200, "application/json", response);
-        return;
-      }
-    } else if (command == "level") {
-      String response = "{\"status\":\"Error\"\"}";
-      server.send(200, "application/json", response);
-      return;
-    }
+    Serial.print("Received command:Portion ");
+   
+
+    String response = "{\"foodLevel1\":\"OK\",\"foodLevel2\":\"test\"}";
+
+    server.send(200, "application/json", response);
+    return;
   }
-   Serial.print("Error command ");
+  Serial.print("Error command ");
   server.send(400);
+}
+void WifiControlManager::handleScheduleCommand() {
+
+    Serial.print("Received command:Schedule ");
+
+
+    String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
+
+    server.send(200, "application/json", response);
+    return;
+
+}
+void WifiControlManager::handleStatusCommand() {
+
+    Serial.print("Received command:Status ");
+
+
+    String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
+
+    server.send(200, "application/json", response);
+    return;
+
 }

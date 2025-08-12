@@ -36,6 +36,7 @@ class BLECallbacks : public BLECharacteristicCallbacks {
       WifiControlManager wifiManager;
       if(wifiManager.connect()){
       pCharacteristic->setValue(wifiManager.getIpAddress().c_str());
+      Serial.printf("Notify WIFI connected: ");
       pCharacteristic->notify(); 
       delay(100); //give time for message before shutting down
       //Turn off the Bluetooth - no longer needed.
