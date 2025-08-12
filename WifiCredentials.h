@@ -1,4 +1,4 @@
-// WifiTypes.h
+// WifiCredentials.h
 #ifndef WIFI_TYPES_H
 #define WIFI_TYPES_H
 
