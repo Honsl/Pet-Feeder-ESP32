@@ -2,6 +2,7 @@
 #include "WifiMemoryManager.h"
 #include "WifiCredentials.h"
 #include "BluetoothManager.h"
+#include "FeederInfo.h"
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
@@ -20,6 +21,8 @@ String lastSyncDate = "";
 unsigned long alarmTriggeredAt = 0;
 unsigned long lastSyncCheck = 0;
 bool alarmActive = false;
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -46,25 +49,21 @@ void loop() {
     wifiManager.handleClient();
   }
   if (millis() - lastSyncCheck >= syncCheckInterval) {
-    String currentDate = timeClient.getFormattedTime().substring(0, 10);
+    String currentTime = timeClient.getFormattedTime();
     lastSyncCheck = millis();
-    if (currentDate != lastSyncDate) {
-      Serial.println("Syncing time...");
-      timeClient.forceUpdate();  // Manual sync
-      lastSyncDate = currentDate;
+    int currentHour = timeClient.getHours();
+    int currentMinute = timeClient.getMinutes();
+
+    for (Schedule list : scheduleList) {
+      if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
+        Serial.println("Alarm Triggered: It's 11:00 AM!");
+        alarmTriggeredAt = millis();
+        alarmActive = true;
+      }
     }
-    Serial.println("Current Time: " + currentDate);
+    Serial.println("Current Time: " + currentTime);
   }
 
-  int currentHour = timeClient.getHours();
-  int currentMinute = timeClient.getMinutes();
-
-  
-  if (currentHour == 11 && currentMinute == 42 && !alarmActive) {
-    Serial.println("🔔 Alarm Triggered: It's 11:00 AM!");
-    alarmTriggeredAt = millis();
-    alarmActive = true;
-  }
   if (alarmActive && millis() - alarmTriggeredAt >= 60000) {
     alarmActive = false;  // Reset after 60 seconds
   }

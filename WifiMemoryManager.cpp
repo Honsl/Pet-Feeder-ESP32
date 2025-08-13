@@ -32,45 +32,60 @@ bool WifiMemoryManager::hasCredentials() {
 }
 
 bool WifiMemoryManager::saveScheduleInfo(const std::vector<Schedule>& list) {
+  //Always remove any saved schedules before saving the new ones
+  clearScheduleInfo();
   prefs.begin("schedules", RW_MODE);
-  bool savedCount = prefs.putUInt("count", list.size()) > 0;
-  bool savedSchedules = true;
 
-  for (size_t i = 0; i < list.size(); i++) {
-    String key = "schedule_" + String(i);
-    String value = list[i].UUID + "|" + list[i].side + "|" + String(list[i].amount) + "|" + list[i].time;
-    savedSchedules &= prefs.putString(key.c_str(), value) > 0;
+  JsonDocument doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  for (Schedule schedule : list) {
+    JsonObject obj = array.createNestedObject();
+    obj["id"] = schedule.UUID;
+    obj["side"] = schedule.side;
+    obj["amount"] = schedule.amount;
+    obj["hour"] = schedule.hour;
+    obj["minute"] = schedule.minute;
   }
-
+  String jsonString;
+  serializeJson(doc, jsonString);
+  bool savedSchedules = prefs.putString("scheduleList", jsonString);
   prefs.end();
-  return savedCount && savedSchedules;
+  refreshSchedule();
+  return savedSchedules > 0;
 }
 
 std::vector<Schedule> WifiMemoryManager::loadScheduleInfo() {
-  std::vector<Schedule> list;
-  prefs.begin("schedules", RO_MODE);
-  uint32_t count = prefs.getUInt("count", 0);
-  for (uint32_t i = 0; i < count; i++) {
-    String key = "schedule_" + String(i);
-    String value = prefs.getString(key.c_str(), "");
-    if (value.length() > 0) {
-      Schedule s;
-      int idx1 = value.indexOf('|');
-      int idx2 = value.indexOf('|', idx1 + 1);
-      int idx3 = value.indexOf('|', idx2 + 1);
+  Preferences prefs;
+  prefs.begin("schedules", true);  // read-only mode
 
-      s.UUID = value.substring(0, idx1);
-      s.side = value.substring(idx1 + 1, idx2);
-      s.amount = value.substring(idx2 + 1, idx3).toInt();
-      s.time = value.substring(idx3 + 1);
+  String jsonString = prefs.getString("scheduleList", "[]");
+  prefs.end();
 
-      list.push_back(s);
-    }
+  std::vector<Schedule> scheduleList;
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, jsonString);
+
+  if (error) {
+    Serial.print("Failed to parse schedule JSON: ");
+    Serial.println(error.c_str());
+    return scheduleList;  // return empty list
   }
 
-  prefs.end();
-  return list;
+  JsonArray array = doc.as<JsonArray>();
+  for (JsonObject obj : array) {
+    Schedule s;
+    s.UUID = obj["id"].as<String>();
+    s.side = obj["side"].as<String>();
+    s.amount = obj["amount"].as<int>();
+    s.hour = obj["hour"].as<int>();
+    s.minute = obj["minute"].as<int>();
+    scheduleList.push_back(s);
+  }
+
+  return scheduleList;
 }
+
 
 void WifiMemoryManager::clearScheduleInfo() {
   prefs.begin("schedules", RW_MODE);

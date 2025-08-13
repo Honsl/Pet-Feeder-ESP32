@@ -5,9 +5,11 @@
 #define RO_MODE true
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <Preferences.h>
 #include <WifiCredentials.h>
 #include <FeederInfo.h>
+
 
 class WifiMemoryManager {
 private:

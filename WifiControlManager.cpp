@@ -56,7 +56,7 @@ bool WifiControlManager::connect() {
     server.on("/feed", HTTP_GET, [this]() {
       this->handleFeedCommand();
     });
-    server.on("/setSchedule", HTTP_GET, [this]() {
+    server.on("/setSchedule", HTTP_POST, [this]() {
       this->handleScheduleCommand();
     });
     server.on("/status", HTTP_GET, [this]() {
@@ -80,7 +80,7 @@ void WifiControlManager::handleFeedCommand() {
     String portions = server.arg("portion");
 
     Serial.print("Received command:Portion ");
-   
+
 
     String response = "{\"foodLevel1\":\"OK\",\"foodLevel2\":\"test\"}";
 
@@ -92,23 +92,40 @@ void WifiControlManager::handleFeedCommand() {
 }
 void WifiControlManager::handleScheduleCommand() {
 
-    Serial.print("Received command:Schedule ");
+  Serial.print("Received command:Schedule ");
+  String body = server.arg("plain");
+  Serial.print(body);
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, body);
+  JsonArray schedules = doc.as<JsonArray>();
+  WifiMemoryManager wifiMemory;
+  std::vector<Schedule> parseSchedules;
+  for (JsonObject schedule : schedules) {
+    int hour, minute;
+    char meridiem[3];  // "AM" or "PM"
 
+    sscanf(schedule["time"].as<String>().c_str(), "%d:%d %2s", &hour, &minute, meridiem);
+    if (strcmp(meridiem, "PM") == 0 && hour != 12) {
+      hour += 12;
+    } else if (strcmp(meridiem, "AM") == 0 && hour == 12) {
+      hour = 0;
+    }
+    Schedule feederSchedule = { schedule["id"].as<String>(), schedule["side"].as<String>(), schedule["amount"].as<int>(), hour, minute };
+    parseSchedules.push_back(feederSchedule);
+  }
+  wifiMemory.saveScheduleInfo(parseSchedules);
+  String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
 
-    String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
-
-    server.send(200, "application/json", response);
-    return;
-
+  server.send(200, "application/json", response);
+  return;
 }
 void WifiControlManager::handleStatusCommand() {
 
-    Serial.print("Received command:Status ");
+  Serial.print("Received command:Status ");
 
 
-    String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
+  String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
 
-    server.send(200, "application/json", response);
-    return;
-
+  server.send(200, "application/json", response);
+  return;
 }

@@ -2,9 +2,12 @@
 #define WIFI_CONTROL_MANAGER_H
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WifiCredentials.h>
+#include <FeederInfo.h>
+
 
 class WifiControlManager {
 

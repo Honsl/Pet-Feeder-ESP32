@@ -17,7 +17,10 @@ struct Schedule {
   String UUID;
   String side;
   int amount;
-  String time;
+  int hour;
+  int minute;
 };
 
+void refreshSchedule();
+extern std::vector<Schedule> scheduleList;
 #endif
