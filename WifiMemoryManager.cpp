@@ -57,12 +57,16 @@ bool WifiMemoryManager::saveScheduleInfo(const std::vector<Schedule>& list) {
 
 std::vector<Schedule> WifiMemoryManager::loadScheduleInfo() {
   Preferences prefs;
-  prefs.begin("schedules", true);  // read-only mode
+  std::vector<Schedule> scheduleList;
 
+  prefs.begin("schedules", RO_MODE);  // read-only mode
+  if(!prefs.isKey("scheduleList")){
+    return scheduleList;
+  }
   String jsonString = prefs.getString("scheduleList", "[]");
   prefs.end();
 
-  std::vector<Schedule> scheduleList;
+  
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, jsonString);
 

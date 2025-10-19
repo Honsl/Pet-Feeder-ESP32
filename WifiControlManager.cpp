@@ -34,7 +34,15 @@ bool WifiControlManager::connect() {
     WifiCredentials creds = wifiMemory.loadWifiCreds();
     String ssid = creds.ssid;
     String password = creds.password;
+    Serial.println(ssid);
+    Serial.println(password);
     // Connect to WiFi
+    WiFi.disconnect(true);  // true = wipe old config
+    WiFi.mode(WIFI_STA);
+      delay(100);
+    Serial.print("WiFi.begin with: ");
+    Serial.println(ssid.c_str());
+    Serial.println(password.c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
     //check the connection
     unsigned long startTime = millis();
@@ -42,13 +50,13 @@ bool WifiControlManager::connect() {
       Serial.print(".");
       delay(100);
     }
+    Serial.println(WiFi.status());
     //If the connection has failed
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("\nConnection failed!");
       return false;
     }
-    Serial.println(ssid);
-    Serial.println(password);
+
     Serial.println("\nConnected to WiFi");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
