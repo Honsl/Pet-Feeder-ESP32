@@ -14,7 +14,8 @@ public:
   
   bool checkFoodLevel();
   bool feed(String types);
-  bool setFeedTimes(String types);
+  bool setup();
+  
   
 };
 
