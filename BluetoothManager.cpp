@@ -14,48 +14,48 @@ class BLECallbacks : public BLECharacteristicCallbacks {
       Serial.print("Raw input: ");
       Serial.println(value.c_str());
 
-     // StaticJsonDocument<256> doc;
-     // DeserializationError err = deserializeJson(doc, value);
-      //if (err) {
-     //   Serial.println("Failed to parse JSON");
-     //   return;
-     // }
+      StaticJsonDocument<256> doc;
+      DeserializationError err = deserializeJson(doc, value);
+      if (err) {
+        Serial.println("Failed to parse JSON");
+        return;
+      }
 
       // Save the credentials to memory
       WifiMemoryManager wifiMemory;
       WifiCredentials creds;
-      //creds.ssid = doc["ssid"];
-      //creds.password = doc["password"];
-      
-     // /if(wifiMemory.save(creds)){
-       /// pCharacteristic->setValue("Error saving WIFI information");
-      //  pCharacteristic->notify(); 
-      //  return;
-      //}
+      creds.ssid = doc["ssid"].as<String>();
+      creds.password = doc["password"].as<String>();
+
+      if (!wifiMemory.saveWifiCreds(creds)) {
+        Serial.printf("Error saving WIFI information");
+        pCharacteristic->setValue("Error saving WIFI information");
+        pCharacteristic->notify();
+        return;
+      }
 
       WifiControlManager wifiManager;
-      if(wifiManager.connect()){
-      pCharacteristic->setValue(wifiManager.getIpAddress().c_str());
-      Serial.printf("Notify WIFI connected: ");
-      pCharacteristic->notify(); 
-      delay(100); //give time for message before shutting down
-      //Turn off the Bluetooth - no longer needed.
-      //BLEDevice::deinit(true);
-      }else{
+      if (wifiManager.connect()) {
+        pCharacteristic->setValue(wifiManager.getIpAddress().c_str());
+        Serial.printf("Notify WIFI connected: ");
+        pCharacteristic->notify();
+        delay(100);  //give time for message before shutting down
+        //Turn off the Bluetooth - no longer needed.
+        BLEDevice::deinit(true);
+      } else {
         pCharacteristic->setValue("Error connecting to WIFI");
-        pCharacteristic->notify(); 
+        pCharacteristic->notify();
       }
-     // Serial.printf("Received SSID: %s\n", creds.ssid);
-    //  Serial.printf("Received Password: %s\n", creds.password);
+     
     }
   }
-  };
+};
 class MyServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer* pServer) override {
+  void onConnect(BLEServer *pServer) override {
     Serial.println("Client connected");
   }
 
-  void onDisconnect(BLEServer* pServer) override {
+  void onDisconnect(BLEServer *pServer) override {
     delay(300);
     Serial.println("Restarted advertising after disconnect");
     pServer->getAdvertising()->start();  // Resume advertising so Android can reconnect
@@ -71,11 +71,11 @@ bool BluetoothManager::start() {
   BLEService *pService = pServer->createService(SERVICE_UUID);
   BLECharacteristic *pCharacteristic =
     pService->createCharacteristic(IP_ADDRESS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
-  
+
   pCharacteristic->addDescriptor(new BLE2902());
 
   pCharacteristic->setCallbacks(new BLECallbacks());
-  
+
   pService->start();
   // BLEAdvertising *pAdvertising = pServer->getAdvertising();  // this still is working for backward compatibility
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
@@ -87,5 +87,3 @@ bool BluetoothManager::start() {
 
   return true;
 }
-
-
