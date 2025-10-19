@@ -1,6 +1,7 @@
 #include "WifiControlManager.h"
 #include "WifiMemoryManager.h"
 #include "WifiCredentials.h"
+#include "FeederManager.h"
 #include "BluetoothManager.h"
 #include "FeederInfo.h"
 #include <WiFi.h>
@@ -31,37 +32,48 @@ void setup() {
   Serial.print("Start: ");
 
   WifiMemoryManager wifiMemory;
+  
   WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
 
   // if cannot connect to wifi or no credentials, turn on the Bluetooth
   if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
+    //  Serial.println("START BLE");
     bleManager.start();
-  }
-  timeClient.begin();
-  timeClient.update();
+  } else {
+    timeClient.begin();
+    timeClient.update();
 
-  lastSyncDate = timeClient.getFormattedTime().substring(0, 10);  // YYYY-MM-DD
+    lastSyncDate = timeClient.getFormattedTime().substring(0, 10);  // YYYY-MM-DD
+  }
 }
 
 void loop() {
-  timeClient.update();  // Will only sync if 24 hours have passed
+
   if (wifiManager.connected()) {
     wifiManager.handleClient();
+    timeClient.update();  // Will only sync if 24 hours have passed
   }
-  if (millis() - lastSyncCheck >= syncCheckInterval) {
-    String currentTime = timeClient.getFormattedTime();
-    lastSyncCheck = millis();
-    int currentHour = timeClient.getHours();
-    int currentMinute = timeClient.getMinutes();
+  //if there is a schedule set
+  if (!scheduleList.empty()) {
+    if (millis() - lastSyncCheck >= syncCheckInterval) {
+      String currentTime = timeClient.getFormattedTime();
+      lastSyncCheck = millis();
+      int currentHour = timeClient.getHours();
+      int currentMinute = timeClient.getMinutes();
 
-    for (Schedule list : scheduleList) {
-      if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
-        Serial.println("Alarm Triggered: It's 11:00 AM!");
-        alarmTriggeredAt = millis();
-        alarmActive = true;
+      for (Schedule list : scheduleList) {
+        if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
+          Serial.println("Alarm Triggered: It's 11:00 AM!");
+          alarmTriggeredAt = millis();
+          alarmActive = true;
+        }
       }
+      Serial.println("Current Time: " + currentTime);
     }
-    Serial.println("Current Time: " + currentTime);
+  } else {
+    //set the motor to "Zero" position
+    FeederManager feeder;
+    //feeder.setup();
   }
 
   if (alarmActive && millis() - alarmTriggeredAt >= 60000) {
