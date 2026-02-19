@@ -10,6 +10,7 @@
 
 WifiControlManager wifiManager;
 BluetoothManager bleManager;
+FeederManager feederManager;
 
 WiFiUDP ntpUDP;
 const long utcOffsetInSeconds = -14400;         // EDT = UTC -4 hours
@@ -22,7 +23,8 @@ String lastSyncDate = "";
 unsigned long alarmTriggeredAt = 0;
 unsigned long lastSyncCheck = 0;
 bool alarmActive = false;
-
+bool ntpStarted = false;
+bool BLEoff = false;
 
 
 void setup() {
@@ -32,49 +34,63 @@ void setup() {
   Serial.print("Start: ");
 
   WifiMemoryManager wifiMemory;
-  
-  WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
 
+  WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
+ // wifiMemory.clearWifiInfo();
   // if cannot connect to wifi or no credentials, turn on the Bluetooth
   if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
-    //  Serial.println("START BLE");
     bleManager.start();
   } else {
+    wifiManager.connect();
     timeClient.begin();
     timeClient.update();
-
+    ntpStarted = true;
     lastSyncDate = timeClient.getFormattedTime().substring(0, 10);  // YYYY-MM-DD
   }
+
+ 
+  feederManager.setup();
 }
 
 void loop() {
 
   if (wifiManager.connected()) {
+    
+    if (!BLEoff) {
+      BLEoff = bleManager.isDone();
+    }
     wifiManager.handleClient();
+    if (!ntpStarted) {
+      timeClient.begin();
+      ntpStarted = true;
+    }
     timeClient.update();  // Will only sync if 24 hours have passed
   }
   //if there is a schedule set
-  if (!scheduleList.empty()) {
-    if (millis() - lastSyncCheck >= syncCheckInterval) {
-      String currentTime = timeClient.getFormattedTime();
-      lastSyncCheck = millis();
-      int currentHour = timeClient.getHours();
-      int currentMinute = timeClient.getMinutes();
+  if (millis() - lastSyncCheck >= syncCheckInterval) {
+    String currentTime = timeClient.getFormattedTime();
+    lastSyncCheck = millis();
+    int currentHour = timeClient.getHours();
+    int currentMinute = timeClient.getMinutes();
 
-      for (Schedule list : scheduleList) {
-        if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
-          Serial.println("Alarm Triggered: It's 11:00 AM!");
-          alarmTriggeredAt = millis();
-          alarmActive = true;
-        }
+    for (Schedule list : scheduleList) {
+      if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
+        Serial.println("Alarm Triggered: It's 11:00 AM!");
+        alarmTriggeredAt = millis();
+        alarmActive = true;
+        feederManager.feeding = true;
+        feederManager.side = list.side;
+        feederManager.amount = list.amount;
       }
-      Serial.println("Current Time: " + currentTime);
     }
-  } else {
-    //set the motor to "Zero" position
-    FeederManager feeder;
-    //feeder.setup();
+    Serial.println("Current Time: " + currentTime);
   }
+
+  if(feederManager.feeding){
+    
+    feederManager.feed();
+  }
+
 
   if (alarmActive && millis() - alarmTriggeredAt >= 60000) {
     alarmActive = false;  // Reset after 60 seconds
