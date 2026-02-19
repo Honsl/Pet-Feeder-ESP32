@@ -15,7 +15,7 @@ struct Feeder {
 
 struct Schedule {
   String UUID;
-  String side;
+  int side;
   int amount;
   int hour;
   int minute;
