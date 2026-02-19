@@ -39,7 +39,7 @@ bool WifiControlManager::connect() {
     // Connect to WiFi
     WiFi.disconnect(true);  // true = wipe old config
     WiFi.mode(WIFI_STA);
-      delay(100);
+    delay(100);
     Serial.print("WiFi.begin with: ");
     Serial.println(ssid.c_str());
     Serial.println(password.c_str());
@@ -47,8 +47,8 @@ bool WifiControlManager::connect() {
     //check the connection
     unsigned long startTime = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - startTime < 10000) {
-      Serial.print(".");
       delay(100);
+      Serial.print(".");
     }
     Serial.println(WiFi.status());
     //If the connection has failed
@@ -80,6 +80,11 @@ bool WifiControlManager::connect() {
 }
 void WifiControlManager::handleClient() {
   server.handleClient();
+}
+void WifiControlManager::handleSetupCommand() {
+  Serial.print("Received command:Setup ");
+  FeederManager feeder;
+  feeder.setup();
 }
 //http://<ESP32_IP>/command?cmd=SET_MODE&value=3
 void WifiControlManager::handleFeedCommand() {
@@ -118,13 +123,19 @@ void WifiControlManager::handleScheduleCommand() {
     } else if (strcmp(meridiem, "AM") == 0 && hour == 12) {
       hour = 0;
     }
-    Schedule feederSchedule = { schedule["id"].as<String>(), schedule["side"].as<String>(), schedule["amount"].as<int>(), hour, minute };
+    //random food selection if 0
+    int side = 0;
+    String sideStr = schedule["side"].as<String>();
+
+    if (sideStr == "left") side = 1;
+    else if (sideStr == "right") side = 2;
+
+    Schedule feederSchedule = { schedule["id"].as<String>(),side, schedule["amount"].as<int>(), hour, minute };
     parseSchedules.push_back(feederSchedule);
   }
   wifiMemory.saveScheduleInfo(parseSchedules);
-  String response = "{\"leftFeeder\":\"50\",\"rightFeeder\":\"70\"}";
 
-  server.send(200, "application/json", response);
+  server.send(200, "application/json", "true");
   return;
 }
 void WifiControlManager::handleStatusCommand() {

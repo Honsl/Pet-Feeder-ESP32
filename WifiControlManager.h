@@ -7,6 +7,7 @@
 #include <WebServer.h>
 #include <WifiCredentials.h>
 #include <FeederInfo.h>
+#include <FeederManager.h>
 
 
 class WifiControlManager {
@@ -21,6 +22,7 @@ public:
   void handleClient();
   void handleFeedCommand();
   void handleStatusCommand();
+  void handleSetupCommand();
   void handleScheduleCommand();
   String getIpAddress() const;
 };
