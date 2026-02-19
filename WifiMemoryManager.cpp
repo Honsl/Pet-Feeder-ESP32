@@ -80,7 +80,7 @@ std::vector<Schedule> WifiMemoryManager::loadScheduleInfo() {
   for (JsonObject obj : array) {
     Schedule s;
     s.UUID = obj["id"].as<String>();
-    s.side = obj["side"].as<String>();
+    s.side = obj["side"].as<int>();
     s.amount = obj["amount"].as<int>();
     s.hour = obj["hour"].as<int>();
     s.minute = obj["minute"].as<int>();
