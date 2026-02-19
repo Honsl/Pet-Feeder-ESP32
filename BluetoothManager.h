@@ -17,7 +17,8 @@ class BluetoothManager {
 
 public:
   bool start();
-
+  bool isConnected();
+  bool isDone();
 };
 
 #endif

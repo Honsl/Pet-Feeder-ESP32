@@ -1,5 +1,7 @@
 #include "BluetoothManager.h"
 
+bool BLEDone = false;
+unsigned long bleShutdownAt = 0;
 
 //Android Device is the client, ESP32 server
 
@@ -9,7 +11,7 @@
 class BLECallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     String value = pCharacteristic->getValue();
-
+    Serial.printf("Recived Nofity");
     if (!value.isEmpty()) {
       Serial.print("Raw input: ");
       Serial.println(value.c_str());
@@ -38,15 +40,16 @@ class BLECallbacks : public BLECharacteristicCallbacks {
       if (wifiManager.connect()) {
         pCharacteristic->setValue(wifiManager.getIpAddress().c_str());
         Serial.printf("Notify WIFI connected: ");
+        Serial.println("About to notify with value: " + String(pCharacteristic->getValue().c_str()));
+
         pCharacteristic->notify();
-        delay(100);  //give time for message before shutting down
-        //Turn off the Bluetooth - no longer needed.
-        BLEDevice::deinit(true);
+        bleShutdownAt = millis() + 20000;
+        BLEDone = true;
+
       } else {
         pCharacteristic->setValue("Error connecting to WIFI");
         pCharacteristic->notify();
       }
-     
     }
   }
 };
@@ -56,11 +59,19 @@ class MyServerCallbacks : public BLEServerCallbacks {
   }
 
   void onDisconnect(BLEServer *pServer) override {
-    delay(300);
+    //delay(300);
     Serial.println("Restarted advertising after disconnect");
     pServer->getAdvertising()->start();  // Resume advertising so Android can reconnect
   }
 };
+bool BluetoothManager::isDone() {
+  if (BLEDone && millis() > bleShutdownAt) {
+     Serial.println("BLE Off");
+    BLEDevice::deinit(true);
+    return true;
+  }
+  return false;
+}
 bool BluetoothManager::start() {
 
   Serial.println("Starting BLE work!");
@@ -70,7 +81,7 @@ bool BluetoothManager::start() {
   pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);
   BLECharacteristic *pCharacteristic =
-    pService->createCharacteristic(IP_ADDRESS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+    pService->createCharacteristic(IP_ADDRESS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
 
   pCharacteristic->addDescriptor(new BLE2902());
 
