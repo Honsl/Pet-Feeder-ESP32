@@ -2,6 +2,7 @@
 #define FEEDER_MANAGER_H
 
 #include <Arduino.h>
+#include "TOF_Sense.h"
 #define S_RXD 18
 #define S_TXD 19
 
@@ -11,12 +12,18 @@ class FeederManager {
 
 
 public:
-  
+
   bool checkFoodLevel();
-  bool feed(String types);
+  bool checkSafeToMove();
+  bool feed();
   bool setup();
-  
-  
+  int side;
+  int amount;
+  bool feeding = false;
+  bool moving = false;
+
+private:
+  SCSCL sc;
 };
 
 #endif
