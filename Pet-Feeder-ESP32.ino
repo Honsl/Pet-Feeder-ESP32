@@ -36,7 +36,7 @@ void setup() {
   WifiMemoryManager wifiMemory;
 
   WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
- // wifiMemory.clearWifiInfo();
+ //wifiMemory.clearWifiInfo();
   // if cannot connect to wifi or no credentials, turn on the Bluetooth
   if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
     bleManager.start();
@@ -75,7 +75,6 @@ void loop() {
 
     for (Schedule list : scheduleList) {
       if (currentHour == list.hour && currentMinute == list.minute && !alarmActive) {
-        Serial.println("Alarm Triggered: It's 11:00 AM!");
         alarmTriggeredAt = millis();
         alarmActive = true;
         feederManager.feeding = true;
