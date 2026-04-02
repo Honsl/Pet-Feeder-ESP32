@@ -55,11 +55,11 @@ uint32_t TOF_Active_Decoding()
 
             //Print data through the terminal 通过终端打印数据
             printf("TOF id is:%d\r\n", TOF_0.id);
-            printf("TOF system time is:%d ms\r\n", TOF_0.system_time);
+           // printf("TOF system time is:%d ms\r\n", TOF_0.system_time);
             printf("TOF distance is:%d mm\r\n", TOF_0.dis);
-            printf("TOF status is:%d\r\n", TOF_0.dis_status);
-            printf("TOF signal strength is:%d\r\n", TOF_0.signal_strength);
-            printf("TOF range precision is:%d\r\n\n", TOF_0.range_precision);
+           // printf("TOF status is:%d\r\n", TOF_0.dis_status);
+            //printf("TOF signal strength is:%d\r\n", TOF_0.signal_strength);
+            //printf("TOF range precision is:%d\r\n\n", TOF_0.range_precision);
             while (TOF_UART.read()>= 0);//Clear the serial port buffer 清空串口缓存
             return TOF_0.dis;
         }
