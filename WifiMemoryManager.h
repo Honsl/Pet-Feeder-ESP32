@@ -19,7 +19,8 @@ public:
   bool saveWifiCreds(const WifiCredentials &creds);
   WifiCredentials loadWifiCreds();
   bool hasCredentials();
-  bool saveFeederInfo();
+  bool saveFeederInfo(const Feeder &feeder);
+  bool saveFeederLevel(const uint32_t left, const uint32_t right);
   Feeder loadFeederInfo();
   void clearFeederInfo();
   bool saveScheduleInfo(const std::vector<Schedule> &list);
