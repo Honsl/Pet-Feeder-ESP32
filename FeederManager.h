@@ -10,7 +10,6 @@
 
 class FeederManager {
 
-
 public:
 
   bool checkFoodLevel();

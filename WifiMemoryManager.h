@@ -10,16 +10,18 @@
 #include <WifiCredentials.h>
 #include <FeederInfo.h>
 
-
-class WifiMemoryManager {
+class WifiMemoryManager
+{
 private:
   Preferences prefs;
 
 public:
-
-  bool saveWifiCreds(const WifiCredentials& creds);
+  bool saveWifiCreds(const WifiCredentials &creds);
   WifiCredentials loadWifiCreds();
   bool hasCredentials();
+  bool saveFeederInfo();
+  Feeder loadFeederInfo();
+  void clearFeederInfo();
   bool saveScheduleInfo(const std::vector<Schedule> &list);
   std::vector<Schedule> loadScheduleInfo();
   void clearScheduleInfo();

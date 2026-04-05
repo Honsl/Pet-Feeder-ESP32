@@ -1,10 +1,11 @@
+#include "pgmspace.h"
 #include "FeederInfo.h"
 #include "WifiMemoryManager.h"
 
-//https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/preferences.html
-//https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
+// https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/preferences.html
+// https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
 
-bool WifiMemoryManager::saveWifiCreds(const WifiCredentials& creds) {
+bool WifiMemoryManager::saveWifiCreds(const WifiCredentials &creds) {
   prefs.begin("prefs", RW_MODE);
   bool ssidSaved = prefs.putString("ssid", creds.ssid) > 0;
   bool passSaved = prefs.putString("password", creds.password) > 0;
@@ -31,8 +32,38 @@ bool WifiMemoryManager::hasCredentials() {
   return has;
 }
 
-bool WifiMemoryManager::saveScheduleInfo(const std::vector<Schedule>& list) {
-  //Always remove any saved schedules before saving the new ones
+bool WifiMemoryManager::saveFeederInfo() {
+  prefs.begin("feeder", RW_MODE);
+  bool name_saved = prefs.putString("name", "") > 0;
+  bool left_saved = prefs.putInt("feeder_left", 0) > 0;
+  bool right_saved = prefs.putInt("feeder_right", 0) > 0;
+  prefs.end();
+
+  return name_saved && left_saved && right_saved;
+}
+
+Feeder WifiMemoryManager::loadFeederInfo() {
+  prefs.begin("feeder", RO_MODE);
+  bool has = prefs.isKey("name") && prefs.isKey("feeder_left") && prefs.isKey("feeder_right");
+  Feeder feeder;
+  if (has) {
+
+    feeder.name = prefs.getString("name");
+    feeder.levelLeft = prefs.getInt("feeder_left");
+    feeder.levelRight = prefs.getInt("feeder_right");
+    prefs.end();
+  }
+  return feeder;
+}
+
+void WifiMemoryManager::clearFeederInfo() {
+  prefs.begin("feeder", RW_MODE);
+  prefs.clear();
+  prefs.end();
+}
+
+bool WifiMemoryManager::saveScheduleInfo(const std::vector<Schedule> &list) {
+  // Always remove any saved schedules before saving the new ones
   clearScheduleInfo();
   prefs.begin("schedules", RW_MODE);
 
@@ -60,13 +91,12 @@ std::vector<Schedule> WifiMemoryManager::loadScheduleInfo() {
   std::vector<Schedule> scheduleList;
 
   prefs.begin("schedules", RO_MODE);  // read-only mode
-  if(!prefs.isKey("scheduleList")){
+  if (!prefs.isKey("scheduleList")) {
     return scheduleList;
   }
   String jsonString = prefs.getString("scheduleList", "[]");
   prefs.end();
 
-  
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, jsonString);
 
@@ -90,13 +120,11 @@ std::vector<Schedule> WifiMemoryManager::loadScheduleInfo() {
   return scheduleList;
 }
 
-
 void WifiMemoryManager::clearScheduleInfo() {
   prefs.begin("schedules", RW_MODE);
   prefs.clear();
   prefs.end();
 }
-
 
 void WifiMemoryManager::clearWifiInfo() {
   prefs.begin("prefs", RW_MODE);
