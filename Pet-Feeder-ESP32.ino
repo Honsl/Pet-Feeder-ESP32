@@ -35,8 +35,19 @@ void setup() {
 
   WifiMemoryManager wifiMemory;
 
+  esp_reset_reason_t reason = esp_reset_reason();
+  switch (reason) {
+    //if the EN button was pushed reset the WIFI info
+    case ESP_RST_EXT:
+      Serial.println("External Reset");
+      wifiMemory.clearWifiInfo();
+    case ESP_RST_POWERON:
+      Serial.println("Power-on reset");
+      break;
+  }
+
+  
   WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
- //wifiMemory.clearWifiInfo();
   // if cannot connect to wifi or no credentials, turn on the Bluetooth
   if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
     bleManager.start();
@@ -48,14 +59,14 @@ void setup() {
     lastSyncDate = timeClient.getFormattedTime().substring(0, 10);  // YYYY-MM-DD
   }
 
- 
+
   feederManager.setup();
 }
 
 void loop() {
 
   if (wifiManager.connected()) {
-    
+
     if (!BLEoff) {
       BLEoff = bleManager.isDone();
     }
@@ -85,8 +96,8 @@ void loop() {
     Serial.println("Current Time: " + currentTime);
   }
 
-  if(feederManager.feeding){
-    
+  if (feederManager.feeding) {
+
     feederManager.feed();
   }
 
