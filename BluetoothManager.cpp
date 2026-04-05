@@ -3,22 +3,26 @@
 bool BLEDone = false;
 unsigned long bleShutdownAt = 0;
 
-//Android Device is the client, ESP32 server
+// Android Device is the client, ESP32 server
 
 #define SERVICE_UUID "dfb4e5ce-76f5-40b5-8cdc-d0096e2ef6be"
 #define IP_ADDRESS_UUID "f4de9c04-97ed-4d88-8c10-ef418642b6df"
-//Payload: {"ssid":"MyWiFi","password":"Secret123"}
-class BLECallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *pCharacteristic) {
+// Payload: {"ssid":"MyWiFi","password":"Secret123"}
+class BLECallbacks : public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *pCharacteristic)
+  {
     String value = pCharacteristic->getValue();
     Serial.printf("Recived Nofity");
-    if (!value.isEmpty()) {
+    if (!value.isEmpty())
+    {
       Serial.print("Raw input: ");
       Serial.println(value.c_str());
 
       StaticJsonDocument<256> doc;
       DeserializationError err = deserializeJson(doc, value);
-      if (err) {
+      if (err)
+      {
         Serial.println("Failed to parse JSON");
         return;
       }
@@ -29,15 +33,19 @@ class BLECallbacks : public BLECharacteristicCallbacks {
       creds.ssid = doc["ssid"].as<String>();
       creds.password = doc["password"].as<String>();
 
-      if (!wifiMemory.saveWifiCreds(creds)) {
+      if (!wifiMemory.saveWifiCreds(creds))
+      {
         Serial.printf("Error saving WIFI information");
         pCharacteristic->setValue("Error saving WIFI information");
         pCharacteristic->notify();
         return;
       }
 
+      wifiMemory.saveFeederInfo(doc["name"].as<String>(), 0, 0);
+
       WifiControlManager wifiManager;
-      if (wifiManager.connect()) {
+      if (wifiManager.connect())
+      {
         pCharacteristic->setValue(wifiManager.getIpAddress().c_str());
         Serial.printf("Notify WIFI connected: ");
         Serial.println("About to notify with value: " + String(pCharacteristic->getValue().c_str()));
@@ -45,34 +53,41 @@ class BLECallbacks : public BLECharacteristicCallbacks {
         pCharacteristic->notify();
         bleShutdownAt = millis() + 20000;
         BLEDone = true;
-
-      } else {
+      }
+      else
+      {
         pCharacteristic->setValue("Error connecting to WIFI");
         pCharacteristic->notify();
       }
     }
   }
 };
-class MyServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *pServer) override {
+class MyServerCallbacks : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer) override
+  {
     Serial.println("Client connected");
   }
 
-  void onDisconnect(BLEServer *pServer) override {
-    //delay(300);
+  void onDisconnect(BLEServer *pServer) override
+  {
+    // delay(300);
     Serial.println("Restarted advertising after disconnect");
-    pServer->getAdvertising()->start();  // Resume advertising so Android can reconnect
+    pServer->getAdvertising()->start(); // Resume advertising so Android can reconnect
   }
 };
-bool BluetoothManager::isDone() {
-  if (BLEDone && millis() > bleShutdownAt) {
-     Serial.println("BLE Off");
+bool BluetoothManager::isDone()
+{
+  if (BLEDone && millis() > bleShutdownAt)
+  {
+    Serial.println("BLE Off");
     BLEDevice::deinit(true);
     return true;
   }
   return false;
 }
-bool BluetoothManager::start() {
+bool BluetoothManager::start()
+{
 
   Serial.println("Starting BLE work!");
 
@@ -81,7 +96,7 @@ bool BluetoothManager::start() {
   pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);
   BLECharacteristic *pCharacteristic =
-    pService->createCharacteristic(IP_ADDRESS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
+      pService->createCharacteristic(IP_ADDRESS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
 
   pCharacteristic->addDescriptor(new BLE2902());
 
@@ -92,7 +107,7 @@ bool BluetoothManager::start() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x06); // functions that help with iPhone connections issue
   pAdvertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
 

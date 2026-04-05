@@ -36,12 +36,12 @@ bool WifiMemoryManager::hasCredentials()
   return has;
 }
 
-bool WifiMemoryManager::saveFeederInfo(const Feeder &feeder)
+bool WifiMemoryManager::saveFeederInfo(const String name, const uint32_t left, const uint32_t right)
 {
   prefs.begin("feeder", RW_MODE);
-  bool name_saved = prefs.putString("name", feeder.name) > 0;
-  bool left_saved = prefs.putUInt("feeder_left", feeder.levelLeft) > 0;
-  bool right_saved = prefs.putUInt("feeder_right", feeder.levelRight) > 0;
+  bool name_saved = prefs.putString("name", name) > 0;
+  bool left_saved = prefs.putUInt("feeder_left", left) > 0;
+  bool right_saved = prefs.putUInt("feeder_right", right) > 0;
   prefs.end();
 
   return name_saved && left_saved && right_saved;

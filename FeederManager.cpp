@@ -89,5 +89,8 @@ bool FeederManager::setup()
     delay(2000);
   }
 
+  WifiMemoryManager wifiMemory;
+  // set inital feeder info
+  wifiMemory.saveFeederInfo("None", 0, 0);
   return true;
 }
