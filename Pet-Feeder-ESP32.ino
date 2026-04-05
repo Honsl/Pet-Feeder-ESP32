@@ -35,16 +35,13 @@ void setup() {
 
   WifiMemoryManager wifiMemory;
 
-  esp_reset_reason_t reason = esp_reset_reason();
-  switch (reason) {
-    //if the EN button was pushed reset the WIFI info
-    case ESP_RST_EXT:
-      Serial.println("External Reset");
-      wifiMemory.clearWifiInfo();
-    case ESP_RST_POWERON:
-      Serial.println("Power-on reset");
-      break;
-  }
+//press EN and the hold BOOT for 5
+pinMode(0, INPUT_PULLUP);
+if (digitalRead(0) == LOW) {
+   Serial.print("reseting! ");
+   wifiMemory.clearWifiInfo();
+   delay(3000);
+}
 
   
   WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
