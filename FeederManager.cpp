@@ -11,8 +11,8 @@ bool FeederManager::checkFoodLevel() {
 bool FeederManager::checkSafeToMove() {
   TOF_Active_Decoding();
   Serial.println("DISTANCE:");
-  Serial.println(TOF_0.dis);
-  if (TOF_0.dis_status == 1 && TOF_0.dis >= 49) {
+  Serial.println(TOF_t[0].dis);
+  if (TOF_t[0].dis_status == 1 && TOF_t[0].dis >= 49) {
     return true;
   }
   return false;

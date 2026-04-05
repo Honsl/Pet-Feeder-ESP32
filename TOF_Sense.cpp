@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "TOF_Sense.h"
 
-TOF_Parameter TOF_0;              // Define a structure to store decoded data 定义一个存放解码后数据的结构体
+TOF_Parameter TOF_t[3];              // Define a structure to store decoded data 定义一个存放解码后数据的结构体
 uint8_t count_i = 0, count_j = 0; // Loop count variable 循环计数变量
 uint8_t check_sum = 0;            // Checksum 校验和
 uint8_t rx_buf[16];               // Serial port receiving array 串口接收数组
@@ -46,22 +46,23 @@ uint32_t TOF_Active_Decoding()
         //Determine whether the decoding is correct 判断解码是否正确
         if ((rx_buf[0] == TOF_FRAME_HEADER) && (rx_buf[1] == TOF_FUNCTION_MARK) && (check_sum == rx_buf[15])) // 如果接收数组第一和第二个元素分别等于TOF_FRAME_HEADER和TOF_FUNCTION_MARK，且算出的校验和的低字节等于协议中的校验和，说明解码正确
         {
-            TOF_0.id = rx_buf[3];                                                                                                                                                  // ID of the TOF module TOF 模块的 ID
-            TOF_0.system_time = (unsigned long)(((unsigned long)rx_buf[7]) << 24 | ((unsigned long)rx_buf[6]) << 16 | ((unsigned long)rx_buf[5]) << 8 | (unsigned long)rx_buf[4]); // The time after the TOF module is powered on TOF模块上电后经过的时间
-            TOF_0.dis = ((float)(((long)(((unsigned long)rx_buf[10] << 24) | ((unsigned long)rx_buf[9] << 16) | ((unsigned long)rx_buf[8] << 8))) / 256));                         // The distance output by the TOF module TOF模块输出的距离
-            TOF_0.dis_status = rx_buf[11];                                                                                                                                         // Distance status indication output by TOF module TOF模块输出的距离状态指示
-            TOF_0.signal_strength = (unsigned int)(((unsigned int)rx_buf[13] << 8) | (unsigned int)rx_buf[12]);                                                                    // The signal strength output by the TOF module TOF模块输出的信号强度
-            TOF_0.range_precision = rx_buf[14];                                                                                                                                    // The repeatability accuracy reference value output by the TOF module is invalid for Type C, Type D and Mini. TOF模块输出的重复测距精度参考值，对于C型,D型和Mini型是无效的
+            uint8_t id = rx_buf[3];  
+            TOF_t[id].id = id;                                                                                                                                                // ID of the TOF module TOF 模块的 ID
+            TOF_t[id].system_time = (unsigned long)(((unsigned long)rx_buf[7]) << 24 | ((unsigned long)rx_buf[6]) << 16 | ((unsigned long)rx_buf[5]) << 8 | (unsigned long)rx_buf[4]); // The time after the TOF module is powered on TOF模块上电后经过的时间
+            TOF_t[id].dis = ((float)(((long)(((unsigned long)rx_buf[10] << 24) | ((unsigned long)rx_buf[9] << 16) | ((unsigned long)rx_buf[8] << 8))) / 256));                         // The distance output by the TOF module TOF模块输出的距离
+            TOF_t[id].dis_status = rx_buf[11];                                                                                                                                         // Distance status indication output by TOF module TOF模块输出的距离状态指示
+            TOF_t[id].signal_strength = (unsigned int)(((unsigned int)rx_buf[13] << 8) | (unsigned int)rx_buf[12]);                                                                    // The signal strength output by the TOF module TOF模块输出的信号强度
+            TOF_t[id].range_precision = rx_buf[14];                                                                                                                                  // The repeatability accuracy reference value output by the TOF module is invalid for Type C, Type D and Mini. TOF模块输出的重复测距精度参考值，对于C型,D型和Mini型是无效的
 
             //Print data through the terminal 通过终端打印数据
-            printf("TOF id is:%d\r\n", TOF_0.id);
+            printf("TOF id is:%d\r\n", TOF_t[id].id);
            // printf("TOF system time is:%d ms\r\n", TOF_0.system_time);
-            printf("TOF distance is:%d mm\r\n", TOF_0.dis);
+            printf("TOF distance is:%d mm\r\n", TOF_t[id].dis);
            // printf("TOF status is:%d\r\n", TOF_0.dis_status);
             //printf("TOF signal strength is:%d\r\n", TOF_0.signal_strength);
             //printf("TOF range precision is:%d\r\n\n", TOF_0.range_precision);
             while (TOF_UART.read()>= 0);//Clear the serial port buffer 清空串口缓存
-            return TOF_0.dis;
+            return TOF_t[id].dis;
         }
         else
         {
@@ -77,52 +78,5 @@ uint32_t TOF_Active_Decoding()
 uint8_t tx_buf[8] = {0x57,0x10,0xff,0xff,0x00,0xff,0xff,0x63};//Query the command with ID 0 查询ID为0的命令
 
 
-/******************************************************************************
-function:	Get TOF data by querying and decoding 通过查询的方式获取TOF数据，并进行解码
-parameter:
-Info:
-******************************************************************************/
-uint32_t TOF_Inquire_Decoding(uint8_t id)
-{
-    tx_buf[4] = id;//Add the ID you want to query to the command 将需要查询的ID添加到命令中
-    tx_buf[7] = id + 0x63;//Update Checksum 更新校验和
-    while (TOF_UART.read()>= 0);//Clear the serial port buffer 清空串口缓存
-    TOF_UART.write(tx_buf,8);//Start query 开始查询
-    delay(10);//Waiting for the sensor to return data 等待传感器返回数据
-    TOF_UART.read(rx_buf,16);//Reading sensor data 读取传感器数据
-    for (count_j = 0; count_j < 15; count_j++)
-    {
-        check_sum += rx_buf[count_j]; // Calculate the checksum and take the lowest byte 计算检验和并取最低一个字节
-    }
-    //Determine whether the decoding is correct 判断解码是否正确
-    if ((rx_buf[0] == TOF_FRAME_HEADER) && (rx_buf[1] == TOF_FUNCTION_MARK) && (check_sum == rx_buf[15])) // 如果接收数组第一和第二个元素分别等于TOF_FRAME_HEADER和TOF_FUNCTION_MARK，且算出的校验和的低字节等于协议中的校验和，说明解码正确
-    {
-        TOF_0.id = rx_buf[3];                                                                                                                                                  // ID of the TOF module TOF 模块的 ID
-        TOF_0.system_time = (unsigned long)(((unsigned long)rx_buf[7]) << 24 | ((unsigned long)rx_buf[6]) << 16 | ((unsigned long)rx_buf[5]) << 8 | (unsigned long)rx_buf[4]); // The time after the TOF module is powered on TOF模块上电后经过的时间
-        TOF_0.dis = ((float)(((long)(((unsigned long)rx_buf[10] << 24) | ((unsigned long)rx_buf[9] << 16) | ((unsigned long)rx_buf[8] << 8))) / 256));                         // The distance output by the TOF module TOF模块输出的距离
-        TOF_0.dis_status = rx_buf[11];                                                                                                                                         // Distance status indication output by TOF module TOF模块输出的距离状态指示
-        TOF_0.signal_strength = (unsigned int)(((unsigned int)rx_buf[13] << 8) | (unsigned int)rx_buf[12]);                                                                    // The signal strength output by the TOF module TOF模块输出的信号强度
-        TOF_0.range_precision = rx_buf[14];                                                                                                                                    // The repeatability accuracy reference value output by the TOF module is invalid for Type C, Type D and Mini. TOF模块输出的重复测距精度参考值，对于C型,D型和Mini型是无效的
 
-        //Print data through the terminal 通过终端打印数据
-        printf("TOF id is:%d\r\n", TOF_0.id);
-        printf("TOF system time is:%d ms\r\n", TOF_0.system_time);
-        printf("TOF distance is:%d mm\r\n", TOF_0.dis);
-        printf("TOF status is:%d\r\n", TOF_0.dis_status);
-        if (TOF_0.dis_status == 0)
-            printf("Measurement distance is invalid.\r\n");
-        else
-            printf("Measurement distance is valid.\r\n");
-            return TOF_0.dis;
-        printf("TOF signal strength is:%d\r\n", TOF_0.signal_strength);
-        printf("TOF range precision is:%d\r\n\n", TOF_0.range_precision);
-    }
-    else
-    {
-        printf("Verification failed.\r\n");
-        return 0;
-    }
-    check_sum = 0; // Clear Checksum 清空校验和
-    return 0;
-}
 
