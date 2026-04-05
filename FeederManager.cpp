@@ -50,11 +50,14 @@ bool FeederManager::feed()
     sc.WritePos(1, 512, 0, 100);
     moving = false;
     feeding = false;
+
     // Update the food level after the feeding
     WifiMemoryManager wifiMemory;
-    //map(currentSpeed, 0, 255, 0, 100);
-    
-    wifiMemory.saveFeederLevel(map(constrain(TOF_t[1].dis, 0, 110),0,110,100,0), map(constrain(TOF_t[2].dis, 0, 110),0,110,100,0));
+
+    if (TOF_t[1].valid && TOF_t[2].valid)
+    {
+      wifiMemory.saveFeederLevel(map(constrain(TOF_t[1].dis, 0, 110), 0, 110, 100, 0), map(constrain(TOF_t[2].dis, 0, 110), 0, 110, 100, 0));
+    }
   }
 
   return false;
