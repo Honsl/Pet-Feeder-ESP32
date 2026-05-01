@@ -26,7 +26,8 @@ bool FeederManager::feed()
   if (!checkSafeToMove())
   {
     // set the motor to current postion to stop movement
-    sc.WritePos(1, sc.ReadPos(1), 0, 500);
+    //sc.WritePos(1, sc.ReadPos(1), 0, 500);
+    st.WritePosEx(1, st.ReadPos(1), 500, 50);
     moving = false;
     return false;
   }
@@ -35,19 +36,21 @@ bool FeederManager::feed()
   {
     side = (random(2) == 0) ? 1 : 2; // random 1 or 2
   }
-  u16 position = (side == 1) ? 0 : 1024;
+  u16 position = (side == 1) ? 400 : 3695;
 
-  if (!moving && abs(sc.ReadPos(1) - position) > 26)
+  if (!moving && abs(st.ReadPos(1) - position) > 26)
   {
-    sc.WritePos(1, position, 0, 100);
+    //sc.WritePos(1, position, 0, 600);
+    st.WritePosEx(1, position, 600, 50);
     moving = true;
   }
 
   // if the scoop has been set to a hopper, then move back to dispense
-  if (moving && abs(sc.ReadPos(1) - position) < 26)
+  if (moving && abs(st.ReadPos(1) - position) < 26)
   {
     // move scoop to dispence
-    sc.WritePos(1, 512, 0, 100);
+    //sc.WritePos(1, 2047, 0, 600);
+    st.WritePosEx(1, 2047, 600, 50);
     moving = false;
     feeding = false;
 
@@ -68,15 +71,15 @@ bool FeederManager::setup()
 {
   Serial1.begin(1000000, SERIAL_8N1, S_RXD, S_TXD);
   TOF_UART.begin(921600, SERIAL_8N1, TOF_RX_PIN, TOF_TX_PIN);
-  sc.pSerial = &Serial1;
+  st.pSerial = &Serial1;
   delay(1000);
-  int Pos = sc.ReadPos(1);
+  int Pos = st.ReadPos(1);
   Serial.print("Feeder POS: ");
   Serial.println(Pos, DEC);
 
-  sc.WritePos(1, 512, 0, 500); // Servo(ID1) moves at max speed=1500, moves to position=511 which is middle.
+  st.WritePosEx(1, 2047, 600, 50); // Servo(ID1) moves at max speed=1500, moves to position=2047 which is middle.
 
-  int ID = sc.Ping(1);
+  int ID = st.Ping(1);
   if (ID != -1)
   {
     Serial.print("Servo ID:");

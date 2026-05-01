@@ -22,7 +22,8 @@ public:
   bool moving = false;
 
 private:
-  SCSCL sc;
+ // SCSCL sc;
+  SMS_STS st;
 };
 
 #endif

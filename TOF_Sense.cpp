@@ -56,10 +56,10 @@ uint32_t TOF_Active_Decoding()
                 TOF_t[id].valid = true;
 
                 // Print data through the terminal 通过终端打印数据
-                printf("TOF id is:%d\r\n", TOF_t[id].id);
-                // printf("TOF system time is:%d ms\r\n", TOF_0.system_time);
-                printf("TOF distance is:%d mm\r\n", TOF_t[id].dis);
-                // printf("TOF status is:%d\r\n", TOF_0.dis_status);
+               // printf("TOF id is:%d\r\n", TOF_t[id].id);
+                //printf("TOF system time is:%d ms\r\n", TOF_t[id].system_time);
+                //printf("TOF distance is:%d mm\r\n", TOF_t[id].dis);
+              //  printf("TOF status is:%d\r\n", TOF_t[id].dis_status);
                 // printf("TOF signal strength is:%d\r\n", TOF_0.signal_strength);
                 // printf("TOF range precision is:%d\r\n\n", TOF_0.range_precision);
                 while (TOF_UART.read() >= 0)
