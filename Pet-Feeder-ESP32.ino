@@ -7,6 +7,8 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
+#include <MusicPlayer.h>
+#include "Songs.h"
 
 WifiControlManager wifiManager;
 BluetoothManager bleManager;
@@ -26,6 +28,7 @@ bool alarmActive = false;
 bool ntpStarted = false;
 bool BLEoff = false;
 
+MusicPlayer music(2);
 
 void setup() {
   Serial.begin(115200);
@@ -33,17 +36,19 @@ void setup() {
   delay(3000);
   Serial.print("Start: ");
 
+  music.begin(SONG_MII);
+  
   WifiMemoryManager wifiMemory;
 
-//press EN and the hold BOOT for 5
-pinMode(0, INPUT_PULLUP);
-if (digitalRead(0) == LOW) {
-   Serial.print("reseting! ");
-   wifiMemory.clearWifiInfo();
-   delay(3000);
-}
+  //press EN and the hold BOOT for 5
+  pinMode(0, INPUT_PULLUP);
+  if (digitalRead(0) == LOW) {
+    Serial.print("reseting! ");
+    wifiMemory.clearWifiInfo();
+    delay(3000);
+  }
 
-  
+
   WifiCredentials loadedCreds = wifiMemory.loadWifiCreds();
   // if cannot connect to wifi or no credentials, turn on the Bluetooth
   if (loadedCreds.ssid.length() == 0 || !wifiManager.connect()) {
@@ -60,8 +65,10 @@ if (digitalRead(0) == LOW) {
   feederManager.setup();
 }
 
-void loop() {
 
+void loop() {
+  static bool wasFeeding = false;
+  
   if (wifiManager.connected()) {
 
     if (!BLEoff) {
@@ -94,9 +101,14 @@ void loop() {
   }
 
   if (feederManager.feeding) {
-
+    music.update();
     feederManager.feed();
-  }
+    wasFeeding = true;
+  }else if (wasFeeding) {
+    // Feeding just ended
+    music.reset();        // reset music for next feeding cycle
+    wasFeeding = false;
+}
 
 
   if (alarmActive && millis() - alarmTriggeredAt >= 60000) {

@@ -50,7 +50,7 @@ bool FeederManager::feed()
   {
     // move scoop to dispence
     //sc.WritePos(1, 2047, 0, 600);
-    st.WritePosEx(1, 2047, 600, 50);
+    st.WritePosEx(1, 2047, 600, 800);
     moving = false;
     feeding = false;
 
